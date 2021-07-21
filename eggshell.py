@@ -20,8 +20,11 @@ class EggShell:
             self.server.debug = False
             
         #Getting hostname and IP address for reference display in the banner
-        hostname = socket.gethostname()   
-        IPAddr = socket.gethostbyname(hostname)   
+        #Fix socket.gaierror: [Errno 8] nodename nor servname provided, or not known
+        #References https://stackoverflow.com/questions/39970606/gaierror-errno-8-nodename-nor-servname-provided-or-not-known-with-macos-sie
+        hostname = socket.gethostbyname("")
+        IPAddr = socket.gethostname()
+        print(IPAddr)
         
         self.payloads = self.import_payloads() 
         self.banner_text = h.GREEN+"""
