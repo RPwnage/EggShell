@@ -1,7 +1,4 @@
-
-<center>
-  <h1 align="center">EggShell Community Version</h1>
-</center>
+<center> <h1 align="center">EggShell Community Version</h1> </center>
 
 ![Unbenannt-1](https://user-images.githubusercontent.com/33968601/111917307-9201c000-8a7f-11eb-9a40-95f19f3507dd.png)
 
@@ -26,6 +23,11 @@ Using `git clone`:
 git clone https://github.com/rpwnage/eggshell-community-fork eggshell && cd eggshell && python3 eggshell.py
 ```
 
+Using `Wget`:
+```sh
+wget https://raw.githubusercontent.com/AstroOrbis/EggShell-Community-Fork/master/eggshell.py && python3 eggshell.py
+```
+
 Using the `github.com` website:
 
 ```
@@ -39,27 +41,29 @@ Using the `github.com` website:
 ## Creating Payloads
 Eggshell payloads are executed on the target machine. The payload first sends over instructions for getting and sending back device details to our server and then chooses the appropriate executable to establish a secure remote control session.
 
-### bash
-Selecting bash from the payload menu will give us a 1 liner that establishes an eggshell session upon execution on the target machine
+### Bash
+Selecting bash from the payload menu will give us a 1 liner that establishes an eggshell session upon execution on the target machine.
 
-### teensy macOS (USB injection)
-Teensy is a USB development board that can be programmed with the Arduino ide.  It emulates usb keyboard strokes extremely fast and can inject the EggShell payload just in a few seconds.
-Selecting teensy will give us an arduino based payload for the teensy board.
-After uploading to the teensy, we can use the device to plug into a macOS usb port.  Once connected to a computer, it will automatically emulate the keystrokes needed to execute a payload.
+### Teensy macOS (USB injection)
+Teensy is a USB development board that can be programmed with the Arduino IDE. It emulates usb keyboard strokes extremely fast and can inject the EggShell payload just in a few seconds.
+Selecting Teensy will give us an Arduino based payload for the Teensy board.
+After uploading to the Teensy, we can plug the device into a macOS usb port. Once connected to a computer, it will automatically emulate the keystrokes needed to execute a payload.
+
 
 ## Usage
 ### Interacting with a session
 After a session is established, we can execute commands on that device through the EggShell command line interface.
-We can show all the available commands by typing "help"
+We can show all the available commands by typing `help`.
 
 ### Taking Pictures
 Both iOS and macOS payloads have picture taking capability. The picture command lets you take a picture from the iSight on macOS as well as the front or back camera on iOS.
 
 ### Tab Completion
-Similar to most command line interfaces, EggShell supports tab completion.  When you start typing the path to a directory or filename, we can complete the rest of the path using the tab key.
+Similar to most command line interfaces, EggShell supports tab completion.When you start typing the path to a directory or filename, we can complete the rest of the path using the tab key.
+
 ### Multihandler
 The Multihandler option lets us handle multiple sessions.  We can choose to interact with different devices while listening for new connections in the background.  
-Similar to the session interface, we can type "help" to show Multihandler commands
+Similar to the session interface, we can type `help` to show Multihandler commands.
 
 ## Special Thanks
 - Linus Yang / Ryley Angus for the iOS Python package

@@ -17,11 +17,7 @@ class EggShell:
         if len(sys.argv) == 2 and sys.argv[1] == "debug":
             self.server.debug = True
         else:
-            self.server.debug = False
-            
-        #Getting hostname and IP address for reference display in the banner
-        hostname = socket.gethostname()   
-        IPAddr = socket.gethostbyname(hostname)   
+            self.server.debug = False 
         
         self.payloads = self.import_payloads() 
         self.banner_text = h.GREEN+"""
@@ -53,7 +49,7 @@ class EggShell:
                    rpw  \__|----' `""\"`
 
             """+h.WHITE+"\nCommunity Fork: 1.0.0  - "+githash+"\n"+h.ENDC
-        self.main_menu_text = h.WHITE+"-"*40+"\n"+"Your computer hostname is: " + hostname + "\n" + "Your computer's IP Address is: " + IPAddr + "\n"
+        self.main_menu_text = h.WHITE+"-"*40+"\n"+"Your computer hostname is: " + socket.gethostname() + "\n" + "Your computer's IP Address is: " + socket.gethostbyname(socket.gethostname()) + "\n"
         self.main_menu_text = h.WHITE+"-"*40+"\n"+"""Menu:\n
                 1): Start Server
                 2): Start MultiHandler
